@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
 import os
+import re # أضفنا هذه المكتبة للتنظيف الاحترافي
 
 def get_gold_price():
     url = "https://www.goldpriceindia.com/"
@@ -14,16 +15,22 @@ def get_gold_price():
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            # البحث عن الكلاس الذي حددناه من صورتك
             price_element = soup.find('td', class_='p-2 align-center nte-day-low')
             
             if price_element:
-                rate = price_element.text.strip()
-                print(f"✅ تم بنجاح! السعر الحالي هو: {rate}")
+                rate_raw = price_element.text.strip()
+                
+                # --- خطوة التنظيف الجديدة ---
+                # نقوم بإزالة أي شيء ليس رقماً (مثل ₹، الفواصل، والرموز)
+                rate_clean = re.sub(r'[^\d.]', '', rate_raw)
+                # تحويله إلى رقم حقيقي (float)
+                rate_number = float(rate_clean)
+                
+                print(f"✅ تم بنجاح! السعر الخام: {rate_raw} -> السعر المنظف: {rate_number}")
                 
                 data = {
                     'Date': [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
-                    'Gold Price': [rate]
+                    'Gold Price': [rate_number] # نحفظ الرقم المنظف هنا
                 }
                 
                 df = pd.DataFrame(data)
